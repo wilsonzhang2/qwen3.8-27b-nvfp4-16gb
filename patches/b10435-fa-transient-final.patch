@@ -195,7 +195,7 @@ index 598f322..476322f 100644
      int64_t ne0 = tensor->ne[0];
  
      if (ggml_is_quantized(tensor->type)) {
-@@ -919,6 +915,8 @@ static size_t ggml_backend_cuda_buffer_type_get_alloc_size(ggml_backend_buffer_ty
+@@ -919,6 +915,8 @@ static size_t ggml_backend_cuda_buffer_type_get_alloc_size(ggml_backend_buffer_t
      }
  
      return size;
