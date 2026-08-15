@@ -123,7 +123,7 @@ index e67cc7f..0b86d7e 100644
          }
      }
  
- diff --git a/ggml/src/ggml-cuda/fattn.cu b/ggml/src/ggml-cuda/fattn.cu
+diff --git a/ggml/src/ggml-cuda/fattn.cu b/ggml/src/ggml-cuda/fattn.cu
 index ab7a3b2..b6573b9 100644
 --- a/ggml/src/ggml-cuda/fattn.cu
 +++ b/ggml/src/ggml-cuda/fattn.cu
@@ -168,7 +168,7 @@ index ab7a3b2..b6573b9 100644
  void ggml_cuda_flash_attn_ext(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
      ggml_cuda_set_device(ctx.device);
      switch (ggml_cuda_get_best_fattn_kernel(ggml_cuda_get_device(), dst)) {
- diff --git a/ggml/src/ggml-cuda/fattn.cuh b/ggml/src/ggml-cuda/fattn.cuh
+diff --git a/ggml/src/ggml-cuda/fattn.cuh b/ggml/src/ggml-cuda/fattn.cuh
 index f9a7e15..78705d5 100644
 --- a/ggml/src/ggml-cuda/fattn.cuh
 +++ b/ggml/src/ggml-cuda/fattn.cuh
@@ -178,7 +178,7 @@ index f9a7e15..78705d5 100644
  bool ggml_cuda_flash_attn_ext_supported(int device, const ggml_tensor * dst);
 -
 -size_t ggml_cuda_flash_attn_ext_get_alloc_size(int device, const ggml_tensor * dst);
- diff --git a/ggml/src/ggml-cuda/ggml-cuda.cu b/ggml/src/ggml-cuda/ggml-cuda.cu
+diff --git a/ggml/src/ggml-cuda/ggml-cuda.cu b/ggml/src/ggml-cuda/ggml-cuda.cu
 index 598f322..476322f 100644
 --- a/ggml/src/ggml-cuda/ggml-cuda.cu
 +++ b/ggml/src/ggml-cuda/ggml-cuda.cu
