@@ -51,5 +51,4 @@ hf upload "$HF_REPO" "$MMPROJ" "$(basename "$MMPROJ")" \
   "${TOKEN_ARGS[@]}"
 
 echo
-echo=""
 echo "DONE: https://huggingface.co/$HF_REPO"
