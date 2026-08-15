@@ -1,0 +1,8 @@
+*.gguf
+*.safetensors
+*.pt
+*.bin
+*.log
+*.csv
+__pycache__/
+.venv*/
