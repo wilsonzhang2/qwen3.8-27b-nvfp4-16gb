@@ -1,0 +1,16 @@
+Qwen3.8-27B NVFP4 16GB Deployment Project
+
+This repository contains independent community documentation, scripts, benchmark observations, and deployment notes for running a Qwen3.8-27B GGUF derivative with llama.cpp on a 16 GB NVIDIA GPU.
+
+Upstream components and projects referenced by this repository include:
+
+- Qwen / Alibaba Cloud — Qwen3.8-27B base model and associated multimodal weights/configuration.
+- ggml-org / llama.cpp — GGUF tooling, llama-server, CUDA backend, and multimodal conversion utilities.
+- NVIDIA — CUDA platform and RTX 5060 Ti hardware used for local validation.
+- Hugging Face — upstream model hosting and model-repository infrastructure.
+
+This repository is not an official release from any of the organizations above and does not imply endorsement or affiliation.
+
+Any redistributed model or projector weights remain subject to the license, notice, and attribution requirements of their exact upstream sources. See ATTRIBUTION.md.
+
+Local deployment validation and documentation: Wilson Zhang / wilsonzhang2.
