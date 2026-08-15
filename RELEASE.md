@@ -23,7 +23,21 @@ https://huggingface.co/QQZ2026/Qwen3.8-27B-NVFP4-Q5K-no-MTP-GGUF
 71101eb61e223e70e58b762c596f5303b63a91aec45fd9cdc5dad5592377f2ee  mmproj-Qwen3.8-27B-F16.gguf
 ```
 
-These hashes were computed from the exact VM101 files that were uploaded to Hugging Face.
+These hashes were computed from the exact VM101 files uploaded to Hugging Face.
+
+## Exact tested llama.cpp patch artifact
+
+```text
+1b0cb7a04a62543a4f27ce8ae6ef7f08cc79bd246dc282af23e4b3439a6c266b  patches/b10435-fa-transient-final.patch
+```
+
+Patch file:
+
+[`patches/b10435-fa-transient-final.patch`](patches/b10435-fa-transient-final.patch)
+
+The uploaded patch is **8,251 bytes / 206 lines** and was copied from the exact file used on VM101 after the successful 2026-08-15 validation.
+
+A separate checksum file is stored at [`PATCH_SHA256SUMS`](PATCH_SHA256SUMS).
 
 ## llama.cpp validation base
 
@@ -87,11 +101,11 @@ No CUDA OOM was observed in the final 40K MAIN + simultaneous real-image custome
 
 ## Transient Flash-Attention patch
 
-The production-like validation used a local b10435-specific transient FA scratch patch described in `PATCH-NOTES.md`.
+The production-like validation used the exact b10435-specific patch above. Its behavior and caveats are documented in [`PATCH-NOTES.md`](PATCH-NOTES.md).
 
-The tested patch changes when quantized-KV Flash-Attention F16 dequant scratch is committed. It improved startup headroom from approximately 124 MiB free to 364 MiB free in the 64K/P2/full-GPU profile, but long-context work grows the CUDA pool to a high-water mark. It is therefore not a permanent worst-case 240 MiB saving.
+The patch changes when quantized-KV Flash-Attention F16 dequant scratch is committed. It improved startup headroom from approximately **124 MiB free to 364 MiB free** in the 64K/P2/full-GPU profile, but long-context work grows the CUDA pool to a high-water mark. It is therefore **not** a permanent worst-case 240 MiB saving.
 
-The exact patch must always be paired with the exact llama.cpp base commit above. Do not substitute a diff generated from another revision and call it the tested patch.
+The patch is paired with the exact llama.cpp base commit above. `scripts/apply-b10435-fa-transient.sh` verifies both the base commit and patch SHA256 before applying it.
 
 ## Release scope
 
