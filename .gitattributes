@@ -1,0 +1,8 @@
+* text=auto
+*.md text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+*.service text eol=lf
+*.patch text eol=lf
+SHA256SUMS text eol=lf
+NOTICE text eol=lf
