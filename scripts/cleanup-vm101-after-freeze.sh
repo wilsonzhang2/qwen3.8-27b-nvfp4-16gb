@@ -79,7 +79,7 @@ echo "No running process uses the old llama.cpp trees."
 # Large, superseded model artifacts. Production no-MTP + mmproj remain untouched.
 echo
 echo "===== REMOVE SUPERSEDED MODEL ARTIFACTS ====="
-sudo rm -rf --
+sudo rm -rf -- \
   /opt/models/qwen3.6-27b-utautako \
   /opt/models/qwen3.8-27b-nvfp4 \
   /opt/models/qwen3.8-27b-nvfp4-test
