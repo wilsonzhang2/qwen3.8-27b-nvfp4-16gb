@@ -8,25 +8,34 @@ The model has been successfully published at:
 https://huggingface.co/QQZ2026/Qwen3.8-27B-NVFP4-Q5K-no-MTP-GGUF
 ```
 
-Published files include:
-
-```text
-README.md
-NOTICE
-ATTRIBUTION.md
-SHA256SUMS
-Qwen3.8-27B-NVFP4-Q5K-no-MTP.gguf
-mmproj-Qwen3.8-27B-F16.gguf
-```
-
-Verified SHA256 checksums from the exact uploaded files:
+Published model artifacts:
 
 ```text
 828c54b45e711a7579abe007aeea46c4fbadb71cacc07545239ffb6efa332e66  Qwen3.8-27B-NVFP4-Q5K-no-MTP.gguf
 71101eb61e223e70e58b762c596f5303b63a91aec45fd9cdc5dad5592377f2ee  mmproj-Qwen3.8-27B-F16.gguf
 ```
 
-The same checksums are stored in the GitHub repository root as [`SHA256SUMS`](SHA256SUMS).
+These are the checksums from the exact VM101 files uploaded to Hugging Face. They are also stored in the GitHub repository root as [`SHA256SUMS`](SHA256SUMS).
+
+## Exact llama.cpp patch artifact
+
+The exact tested b10435 transient Flash-Attention patch is stored at:
+
+[`patches/b10435-fa-transient-final.patch`](patches/b10435-fa-transient-final.patch)
+
+Verified patch SHA256:
+
+```text
+1b0cb7a04a62543a4f27ce8ae6ef7f08cc79bd246dc282af23e4b3439a6c266b  b10435-fa-transient-final.patch
+```
+
+The patch is **8,251 bytes / 206 lines** and is byte-identical to the uploaded VM101 file. Git blob SHA for the repository object is:
+
+```text
+36155122737b86f532880f31b690e7cf1aa382a8
+```
+
+See [`PATCH-NOTES.md`](PATCH-NOTES.md) before using it. The helper [`scripts/apply-b10435-fa-transient.sh`](scripts/apply-b10435-fa-transient.sh) verifies both the exact llama.cpp base commit and the patch SHA256 before applying it.
 
 ## Model card source
 
@@ -38,9 +47,31 @@ huggingface/README.md
 
 The main GGUF is the physical no-MTP derivative. The `mmproj` is the matching F16 Vision projector converted from the official `Qwen/Qwen3.8-27B` checkpoint.
 
-## Re-publication helper
+## Lightweight metadata sync
 
-The helper script is:
+After documentation or patch metadata changes in GitHub, there is no need to re-upload the 15.5 GB model weights.
+
+Use:
+
+```text
+scripts/sync-huggingface-metadata.sh
+```
+
+It uploads only:
+
+```text
+README.md
+PATCH-NOTES.md
+RELEASE.md
+PATCH_SHA256SUMS
+patches/b10435-fa-transient-final.patch
+```
+
+The script verifies the exact patch SHA256 before publishing.
+
+## Full re-publication helper
+
+The full helper remains:
 
 ```text
 scripts/publish-huggingface.sh
@@ -59,7 +90,7 @@ chmod +x scripts/publish-huggingface.sh
 scripts/publish-huggingface.sh
 ```
 
-The helper validates the physical no-MTP structure before upload, calculates SHA256 for both artifacts, stages the model card / notices / checksums, and uploads the main GGUF plus matching Vision mmproj.
+The full helper validates the physical no-MTP structure before upload, calculates SHA256 for both model artifacts, stages the model card / notices / checksums, and uploads the main GGUF plus matching Vision mmproj.
 
 Locally validated paths:
 
@@ -67,8 +98,6 @@ Locally validated paths:
 /opt/models/qwen3.8-27b-avifenesh/Qwen3.8-27B-NVFP4-Q5K-no-MTP.gguf
 /opt/models/qwen3.8-27b-avifenesh/mmproj-Qwen3.8-27B-F16.gguf
 ```
-
-The script enables `HF_XET_HIGH_PERFORMANCE=1` unless already overridden.
 
 ## Authentication
 
