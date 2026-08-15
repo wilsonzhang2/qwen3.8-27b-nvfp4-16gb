@@ -4,6 +4,8 @@ set -Eeuo pipefail
 HF_REPO=${HF_REPO:-QQZ2026/Qwen3.8-27B-NVFP4-Q5K-no-MTP-GGUF}
 GH_RAW=${GH_RAW:-https://raw.githubusercontent.com/wilsonzhang2/qwen3.8-27b-nvfp4-16gb/main}
 EXPECTED_PATCH_SHA256=1b0cb7a04a62543a4f27ce8ae6ef7f08cc79bd246dc282af23e4b3439a6c266b
+MODEL_SHA256=828c54b45e711a7579abe007aeea46c4fbadb71cacc07545239ffb6efa332e66
+MMPROJ_SHA256=71101eb61e223e70e58b762c596f5303b63a91aec45fd9cdc5dad5592377f2ee
 
 command -v curl >/dev/null || { echo "ERROR: curl not found" >&2; exit 1; }
 command -v hf >/dev/null || { echo "ERROR: hf CLI not found" >&2; exit 1; }
@@ -23,6 +25,39 @@ actual=$(sha256sum "$TMP/patches/b10435-fa-transient-final.patch" | awk '{print 
   echo "ERROR: patch SHA256 mismatch: $actual" >&2
   exit 1
 }
+
+cat >> "$TMP/README.md" <<EOF
+
+---
+
+## Exact release artifacts
+
+The public model files for this release were uploaded from the validated VM101 system with these SHA256 checksums:
+
+\`\`\`text
+${MODEL_SHA256}  Qwen3.8-27B-NVFP4-Q5K-no-MTP.gguf
+${MMPROJ_SHA256}  mmproj-Qwen3.8-27B-F16.gguf
+\`\`\`
+
+The exact llama.cpp b10435 transient Flash-Attention patch used for the 16 GB validation is also published in this model repository:
+
+\`\`\`text
+${EXPECTED_PATCH_SHA256}  patches/b10435-fa-transient-final.patch
+\`\`\`
+
+The patch is revision-specific to:
+
+\`\`\`text
+llama.cpp b10435
+9e40df63ba151d771d8b247ac4011cf203337e99
+\`\`\`
+
+See \`PATCH-NOTES.md\` and \`RELEASE.md\` for its exact scope, measured VRAM behavior, high-water caveat, and safe application procedure. The source repository is:
+
+\`\`\`text
+https://github.com/wilsonzhang2/qwen3.8-27b-nvfp4-16gb
+\`\`\`
+EOF
 
 echo "Patch SHA256 verified: $actual"
 echo "Syncing documentation to: $HF_REPO"
