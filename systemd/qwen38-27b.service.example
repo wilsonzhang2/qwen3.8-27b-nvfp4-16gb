@@ -1,28 +1,33 @@
 [Unit]
-Description=Qwen3.8-27B NVFP4 no-MTP 64K P2 Vision
+Description=Qwen3.8-27B NVFP4 no-MTP 66K P2 Vision CPU no-patch
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
 User=ai
-WorkingDirectory=/opt/llama.cpp-qwen38
-Environment=MODEL=/opt/models/qwen3.8-27b/Qwen3.8-27B-NVFP4-Q5K-no-MTP.gguf
-Environment=MMPROJ=/opt/models/qwen3.8-27b/mmproj-Qwen3.8-27B-F16.gguf
-Environment=LLAMA_SERVER=/opt/llama.cpp-qwen38/build/bin/llama-server
+WorkingDirectory=/opt/llama.cpp-qwen38-upstream-b10435
+Environment=MODEL=/opt/models/qwen3.8-27b-avifenesh/Qwen3.8-27B-NVFP4-Q5K-no-MTP.gguf
+Environment=MMPROJ=/opt/models/qwen3.8-27b-avifenesh/mmproj-Qwen3.8-27B-F16.gguf
+Environment=LLAMA_SERVER=/opt/llama.cpp-qwen38-upstream-b10435/build/bin/llama-server
 Environment=HOST=0.0.0.0
 Environment=PORT=8001
 Environment=THREADS=7
-ExecStart=/path/to/repository/scripts/run-64k-p2-vision.sh
+ExecStart=/path/to/repository/scripts/run-66k-p2-vision-nopatch.sh
 Restart=on-failure
-RestartSec=3
+RestartSec=5
 TimeoutStopSec=30
+KillSignal=SIGINT
+LimitNOFILE=65535
 
 [Install]
 WantedBy=multi-user.target
 
 # Notes:
 # - Replace /path/to/repository with the local clone path.
-# - Keep the GPU dedicated to this service for the documented 16 GB memory envelope.
-# - The matching F16 mmproj is intentionally kept on CPU by the launcher.
-# - This example does not enable the experimental transient-FA patch; that is a build-time source modification.
+# - Use a clean upstream llama.cpp b10435 worktree at commit:
+#   9e40df63ba151d771d8b247ac4011cf203337e99
+# - Do NOT apply the experimental transient FA patch for this production profile.
+# - The matching F16 mmproj stays on CPU.
+# - Vision is capped with --image-max-tokens 4096.
+# - Keep the GPU dedicated to llama.cpp; measured warm post-load margin was ~74 MiB.
