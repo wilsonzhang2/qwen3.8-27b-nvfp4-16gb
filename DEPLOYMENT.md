@@ -1,24 +1,26 @@
 # Deployment Profile — RTX 5060 Ti 16 GB
 
-This document captures the exact deployment shape that was validated on 2026-08-15 for Qwen3.8-27B NVFP4/Q5K physical no-MTP on a single NVIDIA GeForce RTX 5060 Ti 16 GB.
+This document captures the **current best validated production profile as of 2026-08-16** for Qwen3.8-27B NVFP4/Q5K physical no-MTP on a single NVIDIA GeForce RTX 5060 Ti 16 GB.
 
-## Validated target
+## Recommended target
 
 ```text
 Model:            Qwen3.8-27B NVFP4/Q5K, physical no-MTP
 GPU:              RTX 5060 Ti 16 GB
-Context pool:     64,000 tokens
+Context pool:     66,000 tokens
 Parallel slots:   2
 KV:               unified
 K cache:          q4_0
 V cache:          q4_0
-Text model:       full GPU
+Text model:       full GPU (-ngl 999)
 Vision:           enabled
 Vision projector: F16, CPU-resident
+Image token cap:  4096 per image
 MTP:              disabled / physically removed
+FA patch:         NONE
 ```
 
-## Software environment
+## Exact llama.cpp base
 
 ```text
 Ubuntu:           24.04.4 LTS
@@ -29,7 +31,7 @@ commit:           9e40df63ba151d771d8b247ac4011cf203337e99
 CUDA target:      SM120
 ```
 
-Important llama.cpp build options:
+Build options:
 
 ```text
 GGML_CUDA=ON
@@ -37,6 +39,8 @@ CMAKE_CUDA_ARCHITECTURES=120
 GGML_CUDA_FA_ALL_QUANTS=ON
 CMAKE_BUILD_TYPE=Release
 ```
+
+The recommended deployment uses a **clean upstream b10435 tree**. Do not apply the local transient FA patch for this production profile.
 
 ## Recommended launcher
 
@@ -48,7 +52,8 @@ llama-server \
   -m "$MODEL" \
   --mmproj "$MMPROJ" \
   --no-mmproj-offload \
-  -c 64000 \
+  --image-max-tokens 4096 \
+  -c 66000 \
   -np 2 \
   --kv-unified \
   -ngl 999 \
@@ -62,129 +67,167 @@ llama-server \
   --port 8001
 ```
 
-`-ngl 999` is intentional here. The deployment was tuned around complete GPU placement of the text backbone.
+## Measured VRAM envelope
 
-## Decode measurements
-
-| Scenario | Result |
-|---|---:|
-| 32K / P1 / full GPU | **25.88 tok/s** |
-| 72K / P1 / full GPU | **25.85 tok/s** |
-| Earlier partial-offload, 64K / P1 | ~**19.8–20.3 tok/s** |
-| P2 request A, 512 generated tokens | **24.35 tok/s** |
-| P2 request B, 512 generated tokens | **24.48 tok/s** |
-| Approx. aggregate P2 decode | **48.8 tok/s** |
-
-The partial-offload measurements are important: the earlier ~20 tok/s behavior was not representative of the model's full-GPU capability on this card.
-
-## Vision measurements
-
-A matching F16 projector was generated from `Qwen/Qwen3.8-27B` using llama.cpp's remote multimodal conversion path.
+On the tested RTX 5060 Ti:
 
 ```text
-Projector tensors: 334
-Projector size:    927.6 MiB
-Projector device:  CPU via --no-mmproj-offload
+fresh startup:             15,810 MiB used / 80 MiB free
+first concurrent warm-up:  15,814 -> 15,816 MiB used
+post-warm-up:              15,816 MiB used / 74 MiB free
+later equivalent runs:     no further VRAM growth observed
 ```
 
-Measured with the local transient-FA patch:
+This is an extremely tight memory envelope. The profile should be treated as specific to the tested driver/CUDA/build combination.
+
+## Production-like concurrent test
+
+The final repeated stress workload used:
 
 ```text
-Server startup:         15,526 MiB used / 364 MiB free
-Real image request:     15,546 MiB used / 344 MiB free
-Increment at high-water: ~20 MiB
-Text decode after image preprocessing: 25.24 tok/s
+slot 1 / MAIN:
+  ~40K-token long-context prompt
+  2,048 generated tokens
+
+slot 0 / Vision CS:
+  real image
+  --image-max-tokens 4096
+  ~4,042-4,084 prompt tokens observed
 ```
 
-The image was correctly understood. CPU Vision preprocessing is slower than GPU projector execution, but it preserves the GPU memory needed to keep the complete 27B text backbone resident.
-
-## Long-context P2 test
-
-A simultaneous ~48K MAIN + ~8K CS test completed successfully.
-
-The local transient-FA build reached:
-
-```text
-~15,750 MiB used
-~140 MiB free
-```
-
-Repeating the same workload did not cause another comparable memory increase.
-
-## Combined production-like stress test
-
-The most important final test ran the two logical lanes simultaneously:
-
-```text
-slot 1: ~40K MAIN / thinking
-slot 0: real-image customer-service request
-```
-
-MAIN result:
+Repeated MAIN results were approximately:
 
 ```text
 prompt tokens:       40,103
 output tokens:       2,048
-prompt processing:   382.57 tok/s
-decode:              ~19.0 tok/s
+prompt processing:   ~191-194 tok/s under concurrent Vision load
+decode:              ~19.7-20.3 tok/s under concurrent Vision load
 ```
 
-Combined GPU high-water:
+Both lanes completed repeatedly. No CUDA OOM was observed, and after first-use warm-up the GPU-memory reading stopped increasing.
+
+## Why image-max-tokens 4096 is part of the production recipe
+
+Before applying an image-token cap, real-image requests could expand to very large prompt sizes:
 
 ```text
-15,718 MiB used
-172 MiB free
+~22K tokens in one test
+~35.7K tokens in another test
 ```
 
-Both requests completed. No CUDA OOM or allocation failure was observed.
+With a 66K shared KV pool, that can exhaust the pool when a ~40K MAIN request is active. The server log confirmed this failure mode with messages including:
 
-## Recommended scheduler policy
+```text
+failed to find free space in the KV cache
+Context size has been exceeded
+```
+
+The failing request pair reached approximately:
+
+```text
+Vision slot: 35,679 tokens
+MAIN slot:   30,432 tokens
+combined:    66,111 tokens
+```
+
+After adding:
+
+```text
+--image-max-tokens 4096
+```
+
+Vision prompts for the same class of image stayed around 4K tokens and the concurrent workload completed normally.
+
+## Scheduler policy
+
+P2 is used as two logical lanes, but the KV cache is shared.
 
 ### Lane A — customer service
 
 ```text
 concurrency:      1
-context ceiling:  ~8K
+normal context:   ~4K class
 reasoning:        non-thinking / disabled
 output:           short
 Vision:           allowed
-reservation:      always keep available
+image cap:        4096
+reservation:      keep available
 ```
 
 ### Lane B — MAIN / Hermes
 
 ```text
 concurrency:      1
-normal context:   ~32K–48K
+normal context:   as large as required within the remaining shared pool
 reasoning:        allowed
-64K use:          only when necessary
 ```
 
-Do not treat `-c 64000 -np 2 --kv-unified` as two guaranteed independent 64K slots. It is a shared KV pool. Scheduler policy matters.
+The scheduler should keep the CS lane small and allow the MAIN lane to use the rest. Extra concurrent work should queue or spill to a remote API.
 
-## Why 64K instead of 80K
+## Full-GPU placement matters
 
-80K/P2 was explored, but the practical choices were either extremely small memory headroom or CPU offload of main model layers. Because even limited CPU offload materially reduced decode speed, 64K/P2/full-GPU was selected as the better balance.
+Measured single-stream decode:
 
-## Why no MTP
+| Configuration | Result |
+|---|---:|
+| 32K / P1 / full GPU | **25.88 tok/s** |
+| 72K / P1 / full GPU | **25.85 tok/s** |
+| earlier partial-offload tests | ~**19.8–20.3 tok/s** |
 
-MTP produced a large speculative-decoding speed gain in earlier testing, but the additional draft context made the desired 64K production envelope too fragile on 16 GB.
+The final profile therefore keeps all repeating text blocks plus output on GPU with `-ngl 999`.
 
-The final priority order is:
+## P2 continuous batching
 
-1. full-GPU text backbone;
-2. reserved P2 concurrency;
-3. 64K shared KV;
-4. Vision;
-5. stability;
-6. MTP only if future llama.cpp/CUDA memory behavior makes it fit comfortably.
+Earlier 64K/P2/upstream testing measured two simultaneous 512-token generations at approximately:
+
+```text
+24.35 tok/s
+24.48 tok/s
+aggregate ~48.8 tok/s
+```
+
+This established that P2 itself is useful on the card. The later 66K profile adds the Vision token cap and retains upstream/no-patch behavior.
+
+## Vision on CPU
+
+Use:
+
+```text
+--no-mmproj-offload
+```
+
+The matching F16 projector is approximately 927.6 MiB / 334 tensors and remains in system RAM. A separate 72K/P1/upstream/no-patch Vision test was stable across repeated image requests, with only a small first-use VRAM increase and no continued growth.
+
+## Patch decision
+
+The historical local transient Flash-Attention patch created about 240 MiB of extra startup headroom in the earlier 64K/P2 profile. However, later P2 + Vision stress testing showed repeatable stepwise VRAM growth under the patched configuration.
+
+The current recommendation is therefore:
+
+```text
+Production: upstream b10435, NO PATCH
+Research/reproduction only: b10435 transient FA patch
+```
+
+See `PATCH-NOTES.md` for the measured A/B evidence.
+
+## Production promotion helper
+
+The VM101 helper for the exact validated profile is:
+
+```text
+scripts/promote-vm101-qwen38-66k-p2-nopatch.sh
+```
+
+It validates the exact upstream commit and published model/mmproj SHA256 values before installing the service.
 
 ## Operational cautions
 
 - Keep the GPU dedicated to llama.cpp for this profile.
 - Do not run ComfyUI or another CUDA-heavy process concurrently.
-- `--fit off` means the requested memory layout is not automatically reduced to save you from OOM.
-- Very large images, different batches, another driver, or another llama.cpp revision can change the memory envelope.
-- Restarting the server resets CUDA allocator high-water state after extreme long-context tests.
+- The observed post-warm-up margin was only ~74 MiB.
+- `--fit off` deliberately prevents automatic fallback to a smaller layout.
+- A different driver, llama.cpp revision, image shape, batch, or background process can change the result.
+- 66K is one shared KV pool, not two independent 66K contexts.
 
-This profile is a measured deployment recipe for one specific 16 GB system, not a universal guarantee for every 16 GB GPU.
+This is a measured recipe for one specific 16 GB system, not a universal guarantee for every 16 GB GPU.
