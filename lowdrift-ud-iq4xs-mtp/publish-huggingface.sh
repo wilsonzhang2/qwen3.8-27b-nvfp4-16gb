@@ -54,8 +54,9 @@ echo "Using Python: $PY"
 echo "Publishing to: $REPO_ID"
 
 "$PY" - "$REPO_ID" "$MODEL" "$TMP/README.md" "$TMP/SHA256SUMS" <<'PY'
+import os
 import sys
-from huggingface_hub import HfApi
+from huggingface_hub import HfApi, hf_hub_download
 
 repo_id, model, readme, sums = sys.argv[1:]
 api = HfApi()
@@ -65,32 +66,56 @@ print("Authenticated as:", who.get("name") or who)
 
 api.create_repo(repo_id=repo_id, repo_type="model", private=False, exist_ok=True)
 
-print("Uploading model GGUF with hf_xet when available...")
-api.upload_file(
-    path_or_fileobj=model,
-    path_in_repo=model.rsplit("/", 1)[-1],
-    repo_id=repo_id,
+print("Fetching inherited Apache-2.0 LICENSE from behavioral source...")
+license_path = hf_hub_download(
+    repo_id="asfgsdfg/Qwen3.8-27B-Heretic",
+    filename="LICENSE",
     repo_type="model",
-    commit_message="Upload Qwen3.8-27B LowDrift UD-IQ4_XS MTP GGUF",
 )
 
-print("Uploading model card...")
-api.upload_file(
-    path_or_fileobj=readme,
-    path_in_repo="README.md",
-    repo_id=repo_id,
-    repo_type="model",
-    commit_message="Add 68K P2 MTP2 production model card",
-)
+uploads = [
+    (model, os.path.basename(model), "Upload Qwen3.8-27B LowDrift UD-IQ4_XS MTP GGUF"),
+    (readme, "README.md", "Add searchable model card and download instructions"),
+    (sums, "SHA256SUMS", "Add SHA256 checksum"),
+    (license_path, "LICENSE", "Add inherited Apache-2.0 license"),
+]
 
-print("Uploading checksum...")
-api.upload_file(
-    path_or_fileobj=sums,
-    path_in_repo="SHA256SUMS",
-    repo_id=repo_id,
-    repo_type="model",
-    commit_message="Add SHA256 checksum",
-)
+for local_path, remote_path, message in uploads:
+    print(f"Uploading {remote_path}...")
+    api.upload_file(
+        path_or_fileobj=local_path,
+        path_in_repo=remote_path,
+        repo_id=repo_id,
+        repo_type="model",
+        commit_message=message,
+    )
 
-print(f"DONE: https://huggingface.co/{repo_id}")
+print("Verifying public repository metadata...")
+info = api.model_info(repo_id=repo_id, files_metadata=True)
+files = {x.rfilename: x for x in info.siblings}
+required = {
+    os.path.basename(model),
+    "README.md",
+    "SHA256SUMS",
+    "LICENSE",
+}
+missing = sorted(required - set(files))
+if missing:
+    raise SystemExit(f"ERROR: missing uploaded files: {missing}")
+
+model_size = getattr(files[os.path.basename(model)], "size", None)
+expected_size = os.path.getsize(model)
+if model_size is not None and model_size != expected_size:
+    raise SystemExit(
+        f"ERROR: remote model size mismatch: remote={model_size} local={expected_size}"
+    )
+
+print("PUBLIC VERIFY: PASS")
+print(f"MODEL PAGE: https://huggingface.co/{repo_id}")
+print(
+    "DIRECT FILE: https://huggingface.co/"
+    + repo_id
+    + "/resolve/main/"
+    + os.path.basename(model)
+)
 PY
