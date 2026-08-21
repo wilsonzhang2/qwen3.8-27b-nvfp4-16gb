@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export HF_XET_HIGH_PERFORMANCE=1
+
 REPO_ID="${HF_REPO_ID:-QQZ2026/Qwen3.8-27B-LowDrift-UD-IQ4_XS-MTP-GGUF}"
 MODEL="${MODEL:-/opt/models/qwen3.8-27b-heretic-lowdrift-gguf/Qwen3.8-27B-LowDrift-UD-IQ4_XS-MTP.gguf}"
 EXPECTED_SHA="49021e6e76af0ac6298e56aa4fab1ed56b62c7c66b6e7a18933907185bd1827d"
@@ -63,7 +65,7 @@ print("Authenticated as:", who.get("name") or who)
 
 api.create_repo(repo_id=repo_id, repo_type="model", private=False, exist_ok=True)
 
-print("Uploading model GGUF...")
+print("Uploading model GGUF with hf_xet when available...")
 api.upload_file(
     path_or_fileobj=model,
     path_in_repo=model.rsplit("/", 1)[-1],
