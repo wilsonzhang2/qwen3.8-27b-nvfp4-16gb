@@ -1,15 +1,30 @@
 ---
+license: apache-2.0
+language:
+- en
+- zh
+library_name: gguf
+pipeline_tag: image-text-to-text
 base_model:
 - asfgsdfg/Qwen3.8-27B-Heretic
+base_model_relation: quantized
+model_name: Qwen3.8-27B-LowDrift-UD-IQ4_XS-MTP-GGUF
 tags:
 - gguf
+- llama-cpp
 - qwen
+- qwen3_5
 - qwen3.8
+- vision
+- multimodal
+- heretic
+- abliterated
+- uncensored
+- quantized
 - iq4_xs
 - mtp
 - speculative-decoding
-- llama.cpp
-- multimodal
+- dynamic-v3
 - rtx-5060-ti
 - 16gb-vram
 ---
@@ -17,6 +32,33 @@ tags:
 # Qwen3.8-27B LowDrift UD-IQ4_XS + Embedded MTP GGUF
 
 Low-drift / reduced-refusal Qwen3.8-27B derivative quantized with a Dynamic-V3-style UD-IQ4_XS tensor layout and an embedded original MTP layer.
+
+## Download
+
+Repository:
+
+```text
+QQZ2026/Qwen3.8-27B-LowDrift-UD-IQ4_XS-MTP-GGUF
+```
+
+Download the GGUF with the Hugging Face CLI:
+
+```bash
+hf download QQZ2026/Qwen3.8-27B-LowDrift-UD-IQ4_XS-MTP-GGUF \
+  Qwen3.8-27B-LowDrift-UD-IQ4_XS-MTP.gguf \
+  --local-dir .
+```
+
+Or let llama.cpp download the exact file:
+
+```bash
+llama-server \
+  -hf QQZ2026/Qwen3.8-27B-LowDrift-UD-IQ4_XS-MTP-GGUF \
+  -hff Qwen3.8-27B-LowDrift-UD-IQ4_XS-MTP.gguf \
+  --port 8001
+```
+
+The GGUF is the model artifact. Vision additionally requires a compatible Qwen3.8-27B F16 `mmproj` as documented below.
 
 ## Files
 
@@ -129,17 +171,18 @@ A matching Qwen3.8 F16 `mmproj` can be used with CPU residency on a 16 GB GPU:
 
 The projector is not duplicated in this repository. It can be reused from the existing Qwen3.8 deployment/repository.
 
-## Provenance
+## Provenance and license
 
 - Base family: Qwen3.8-27B
 - Behavioral derivative: `asfgsdfg/Qwen3.8-27B-Heretic`
 - Quantization-layout reference: Unsloth Qwen3.8-27B Dynamic V3 UD-IQ4_XS artifact
 - Runtime: llama.cpp, b10435-based FA-transient build used during validation
+- License: Apache-2.0, inherited from the behavioral source/base model
 
 This derivative is not mathematically identical to the original model. The behavioral source was selected to reduce refusal behavior while keeping published output-distribution drift low.
 
 ## Reproducibility
 
-Build notes, production command, checksum and validation data are maintained at:
+Build notes, production command, checksum and validation data:
 
-`wilsonzhang2/qwen3.8-27b-nvfp4-16gb` → `lowdrift-ud-iq4xs-mtp/`
+https://github.com/wilsonzhang2/qwen3.8-27b-nvfp4-16gb/tree/main/lowdrift-ud-iq4xs-mtp
