@@ -10,6 +10,27 @@ SHA256: 49021e6e76af0ac6298e56aa4fab1ed56b62c7c66b6e7a18933907185bd1827d
 Size: 14,252,845,184 bytes (~13.274 GiB)
 ```
 
+Public release target:
+
+```text
+Hugging Face: QQZ2026/Qwen3.8-27B-LowDrift-UD-IQ4_XS-MTP-GGUF
+GitHub docs:   wilsonzhang2/qwen3.8-27b-nvfp4-16gb/lowdrift-ud-iq4xs-mtp
+```
+
+Search keywords intentionally included in the release metadata/documentation:
+
+```text
+Qwen3.8 27B
+LowDrift
+Heretic / abliterated / uncensored
+UD-IQ4_XS / IQ4_XS
+GGUF / llama.cpp
+MTP / speculative decoding
+Dynamic V3
+RTX 5060 Ti / 16GB VRAM
+vision / multimodal
+```
+
 Production runtime:
 
 ```text
