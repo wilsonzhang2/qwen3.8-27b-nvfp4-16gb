@@ -1,16 +1,11 @@
-Qwen3.8-27B NVFP4 16GB Deployment Project
+Qwen3.8-27B ZeroRefusal UD-IQ4_XS MTP GGUF
 
-This repository contains independent community documentation, scripts, benchmark observations, and deployment notes for running a Qwen3.8-27B GGUF derivative with llama.cpp on a 16 GB NVIDIA GPU.
+This distribution is a derivative of Qwen/Qwen3.8-27B and
+junafinity/Qwen-3.8-27B-Uncensored. Qwen model capability and multimodal
+architecture originate from the Qwen team. The behavioral source was produced
+with ZeroFuse v0.1.0. The mixed quantization layout and imatrix are attributed
+to an earlier Unsloth UD-IQ4_XS preview-era artifact.
 
-Upstream components and projects referenced by this repository include:
-
-- Qwen / Alibaba Cloud — Qwen3.8-27B base model and associated multimodal weights/configuration.
-- ggml-org / llama.cpp — GGUF tooling, llama-server, CUDA backend, and multimodal conversion utilities.
-- NVIDIA — CUDA platform and RTX 5060 Ti hardware used for local validation.
-- Hugging Face — upstream model hosting and model-repository infrastructure.
-
-This repository is not an official release from any of the organizations above and does not imply endorsement or affiliation.
-
-Any redistributed model or projector weights remain subject to the license, notice, and attribution requirements of their exact upstream sources. See ATTRIBUTION.md.
-
-Local deployment validation and documentation: Wilson Zhang / wilsonzhang2.
+The derivative model is distributed under Apache License 2.0. ZeroFuse is
+separately MIT-licensed. See ATTRIBUTION.md and the upstream model cards for
+provenance, limitations, and applicable notices.
