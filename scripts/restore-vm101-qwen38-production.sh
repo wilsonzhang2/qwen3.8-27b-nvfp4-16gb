@@ -1,36 +1,12 @@
 #!/usr/bin/env bash
-set -Eeuo pipefail
-SERVICE=qwen27b.service
-TEST_SERVICE=qwen38-68k-test.service
-PORT=8001
-UNIT=/run/systemd/system/$TEST_SERVICE
-sudo -v
+set -euo pipefail
 
-echo "===== RESTORE FROZEN 64K PRODUCTION ====="
-sudo systemctl stop "$TEST_SERVICE" >/dev/null 2>&1 || true
-sudo rm -f "$UNIT"
+curl -fsSL \
+  https://raw.githubusercontent.com/wilsonzhang2/qwen3.8-27b-nvfp4-16gb/main/zerorefusal-ud-iq4xs-mtp/qwen27b.service \
+  | sudo tee /etc/systemd/system/qwen27b.service >/dev/null
+
 sudo systemctl daemon-reload
-sudo systemctl start "$SERVICE"
+sudo systemctl enable qwen27b.service
+sudo systemctl restart qwen27b.service
 
-ready=0
-for _ in $(seq 1 150); do
-  if curl -fsS "http://127.0.0.1:$PORT/health" >/dev/null 2>&1; then
-    ready=1
-    break
-  fi
-  sleep 1
-done
-
-if [[ "$ready" != 1 ]]; then
-  sudo systemctl status "$SERVICE" --no-pager -l >&2 || true
-  sudo journalctl -u "$SERVICE" -n 120 --no-pager >&2 || true
-  exit 1
-fi
-
-sleep 2
-echo "Production API healthy."
-echo "VRAM:"
-nvidia-smi --query-gpu=memory.used,memory.free --format=csv,noheader
-echo "Service:"
-systemctl is-enabled "$SERVICE" || true
-systemctl is-active "$SERVICE" || true
+until curl -fsS http://127.0.0.1:8001/health; do sleep 5; done

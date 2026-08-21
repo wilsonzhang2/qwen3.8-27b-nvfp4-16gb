@@ -1,74 +1,23 @@
-# Attribution and Provenance
+# Attribution and provenance
 
-This repository is an independent community deployment project for a Qwen3.8-27B GGUF derivative and associated llama.cpp deployment experiments.
+This repository documents a derivative GGUF artifact and runtime configuration.
 
 ## Upstream model
 
-Base-model metadata points to:
+Qwen3.8-27B was created by the Qwen team. Architecture, weights, language capability, multimodal capability and training originate from Qwen. The upstream model is distributed under Apache-2.0.
 
-- **Qwen/Qwen3.8-27B** — official Qwen model repository on Hugging Face.
+## Behavioral weight source
 
-Qwen and the Qwen model family are developed by the Qwen / Alibaba Cloud team.
+The language-model weights are derived from `junafinity/Qwen-3.8-27B-Uncensored`, revision `903d149c148b81fdf4e568a05ac9ad4225f493d7`. That checkpoint was created with ZeroFuse v0.1.0. Its model card reports edits to decoder attention `o_proj` and MLP `down_proj`; vision and embedded MTP tensors were copied unchanged from the base model.
 
-This repository does not claim authorship of the Qwen3.8 model architecture, tokenizer, pretrained weights, Vision encoder, or official model configuration.
+## Quantization
 
-## Source GGUF
+The GGUF tensor-type map reproduces an earlier Unsloth UD-IQ4_XS preview-era layout with the corresponding imatrix. This artifact is independently converted and is not an official current Unsloth Dynamic V3 release.
 
-The physical no-MTP artifact described here was created from a separately obtained Qwen3.8-27B NVFP4/Q5K GGUF that contained one embedded MTP / NextN layer.
+## Runtime
 
-The no-MTP rewrite:
+Production validation uses the public upstream llama.cpp b10435 source at commit `9e40df63ba151d771d8b247ac4011cf203337e99`.
 
-- removes the MTP block tensors;
-- changes model metadata from 65 blocks to 64;
-- changes `nextn_predict_layers` from 1 to 0;
-- copies all retained tensors without requantizing them.
+## License
 
-If the derivative GGUF is redistributed, the publisher must also preserve any attribution, notices, and license conditions required by the **specific upstream quantized GGUF** used as the source artifact.
-
-Do not infer redistribution rights from this repository alone.
-
-## Vision projector
-
-The F16 `mmproj` described in this project was generated from the official `Qwen/Qwen3.8-27B` checkpoint with llama.cpp's multimodal conversion tooling.
-
-The generated projector remains a derivative of the upstream Qwen model weights and must follow the applicable upstream model license and attribution requirements.
-
-## llama.cpp
-
-Inference, GGUF tooling, multimodal conversion, and the CUDA experiments described here use **llama.cpp** by the ggml-org community.
-
-Project:
-
-- https://github.com/ggml-org/llama.cpp
-
-The transient Flash-Attention experiment is a local modification to one tested llama.cpp revision. It is **not an official llama.cpp patch or supported configuration**.
-
-## Local work
-
-The following work was performed for this repository:
-
-- physical no-MTP GGUF rewrite utility;
-- RTX 5060 Ti 16 GB deployment validation;
-- full-GPU / partial-offload A/B measurements;
-- 64K/P2 continuous-batching validation;
-- Qwen3.8 F16 mmproj conversion and CPU-offload validation;
-- 40K MAIN + simultaneous Vision customer-service stress test;
-- experimental transient Flash-Attention scratch-allocation patch analysis;
-- documentation and deployment scripts.
-
-Validation / repository owner:
-
-- Wilson Zhang
-- GitHub: https://github.com/wilsonzhang2
-
-## No affiliation
-
-This repository is not affiliated with or endorsed by Qwen, Alibaba Cloud, NVIDIA, Hugging Face, ggml-org, or the llama.cpp maintainers.
-
-Product names and trademarks belong to their respective owners.
-
-## License handling
-
-Before redistributing any model or projector weights, inspect the **current license files in the exact upstream model repositories** and preserve all required notices.
-
-The documentation here is intended to make the transformation and benchmark provenance explicit; it is not a substitute for the upstream license text and is not itself a grant of rights to redistribute third-party model weights.
+Apache-2.0 terms inherited from Qwen and the behavioral source apply. ZeroFuse is separately MIT-licensed; its license does not replace the model license.
