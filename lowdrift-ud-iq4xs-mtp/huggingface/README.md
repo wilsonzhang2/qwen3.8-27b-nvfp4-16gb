@@ -18,20 +18,26 @@ tags:
 - vision
 - multimodal
 - heretic
+- lowdrift
+- reduced-refusal
 - abliterated
 - uncensored
 - quantized
 - iq4_xs
+- ud-iq4-xs
 - mtp
 - speculative-decoding
-- dynamic-v3
+- unsloth
+- dynamic-v3-preview-layout
 - rtx-5060-ti
 - 16gb-vram
 ---
 
 # Qwen3.8-27B LowDrift UD-IQ4_XS + Embedded MTP GGUF
 
-Low-drift / reduced-refusal Qwen3.8-27B derivative quantized with a Dynamic-V3-style UD-IQ4_XS tensor layout and an embedded original MTP layer.
+Low-drift / reduced-refusal Qwen3.8-27B derivative using an earlier Unsloth **UD-IQ4_XS preview-era tensor layout** and an embedded original MTP layer, packaged as GGUF for llama.cpp.
+
+> **Quantization provenance note:** the 13.274 GiB UD-IQ4_XS reference artifact used for this build was an earlier Unsloth preview-era layout that is no longer part of the current official Dynamic V3 lineup. This repository does **not** claim to be the current official Unsloth Dynamic V3 release.
 
 ## Download
 
@@ -96,6 +102,9 @@ Production target validated on a single RTX 5060 Ti 16 GB:
 llama-server \
   -m Qwen3.8-27B-LowDrift-UD-IQ4_XS-MTP.gguf \
   --alias qwen3.8-27b \
+  --mmproj mmproj-Qwen3.8-27B-F16.gguf \
+  --no-mmproj-offload \
+  --image-max-tokens 4096 \
   -c 68000 \
   -np 2 \
   --kv-unified \
@@ -169,13 +178,15 @@ A matching Qwen3.8 F16 `mmproj` can be used with CPU residency on a 16 GB GPU:
 --image-max-tokens 4096
 ```
 
-The projector is not duplicated in this repository. It can be reused from the existing Qwen3.8 deployment/repository.
+`--image-max-tokens 4096` caps the image-token contribution; it does not force total request prefill to exactly 4096 tokens. Text, chat-template, tool-schema and history tokens are additional.
+
+The projector is not duplicated in this repository. It can be reused from a compatible Qwen3.8-27B Vision deployment.
 
 ## Provenance and license
 
 - Base family: Qwen3.8-27B
 - Behavioral derivative: `asfgsdfg/Qwen3.8-27B-Heretic`
-- Quantization-layout reference: Unsloth Qwen3.8-27B Dynamic V3 UD-IQ4_XS artifact
+- Quantization-layout reference: earlier Unsloth Qwen3.8-27B UD-IQ4_XS preview-era artifact
 - Runtime: llama.cpp, b10435-based FA-transient build used during validation
 - License: Apache-2.0, inherited from the behavioral source/base model
 
