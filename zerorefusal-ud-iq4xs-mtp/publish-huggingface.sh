@@ -30,6 +30,8 @@ curl -fsSL "$RAW_BASE/SHA256SUMS" -o "$STAGE/SHA256SUMS"
 
 "$PY" - <<'PY'
 import os
+import time
+import urllib.request
 from pathlib import Path
 from huggingface_hub import HfApi, hf_hub_download
 from huggingface_hub.errors import HfHubHTTPError
@@ -93,13 +95,28 @@ if files[model_name] != expected_size:
     raise SystemExit(f"remote size mismatch: {files[model_name]}")
 
 api.update_repo_settings(new_repo, repo_type="model", private=False)
-public_info = api.model_info(new_repo, files_metadata=True)
-if public_info.private:
-    raise SystemExit("new repository is still private")
-if public_info.pipeline_tag != "image-text-to-text":
-    raise SystemExit(f"pipeline_tag mismatch: {public_info.pipeline_tag}")
-if public_info.library_name != "gguf":
-    raise SystemExit(f"library_name mismatch: {public_info.library_name}")
+for attempt in range(12):
+    public_info = api.model_info(new_repo, files_metadata=True)
+    if (
+        not public_info.private
+        and public_info.pipeline_tag == "image-text-to-text"
+        and public_info.library_name == "gguf"
+    ):
+        break
+    if attempt == 11:
+        raise SystemExit(
+            "metadata/public-state verification failed: "
+            f"private={public_info.private}, "
+            f"pipeline_tag={public_info.pipeline_tag}, "
+            f"library_name={public_info.library_name}"
+        )
+    time.sleep(5)
+
+download_url = f"https://huggingface.co/{new_repo}/resolve/main/{model_name}?download=true"
+request = urllib.request.Request(download_url, method="HEAD")
+with urllib.request.urlopen(request, timeout=120) as response:
+    if response.status >= 400:
+        raise SystemExit(f"public download returned HTTP {response.status}")
 
 try:
     api.model_info(old_repo)
